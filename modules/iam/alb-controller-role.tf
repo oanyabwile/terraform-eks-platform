@@ -1,27 +1,25 @@
-locals {
-  oidc_provider_host = replace(var.oidc_provider_url, "https://", "")
+data "aws_iam_policy_document" "alb_assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Federated"
+      identifiers = [var.oidc_provider_arn]
+    }
+
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "${replace(var.oidc_provider_url, "https://", "")}:sub"
+      values   = ["system:serviceaccount:kube-system:aws-load-balancer-controller"]
+    }
+  }
 }
 
 resource "aws_iam_role" "alb_controller" {
-  name = "eks-alb-controller-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Federated = var.oidc_provider_arn
-        }
-        Action = "sts:AssumeRoleWithWebIdentity"
-        Condition = {
-          StringEquals = {
-            "${local.oidc_provider_host}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
-          }
-        }
-      }
-    ]
-  })
+  name               = "eks-alb-controller-role"
+  assume_role_policy = data.aws_iam_policy_document.alb_assume_role.json
 }
 
 resource "aws_iam_role_policy_attachment" "alb_controller_attach" {
