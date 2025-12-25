@@ -17,8 +17,3 @@ data "aws_iam_policy_document" "assume_role" {
   }
 }
 
-resource "aws_iam_role" "alb_controller" {
-  name               = "${var.cluster_name}-alb-controller"
-  assume_role_policy = data.aws_iam_policy_document.assume_role.json
-}
-
