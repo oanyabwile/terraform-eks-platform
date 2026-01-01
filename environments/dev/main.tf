@@ -7,7 +7,7 @@ terraform {
     region         = "us-east-2"
     dynamodb_table = "terraform-state-locks"
     encrypt        = true
-    profile        = "eks-dev"
+    profile        = "AdminBootstrap-277089531535"
   }
 
   required_providers {
@@ -20,7 +20,7 @@ terraform {
 
 provider "aws" {
   region  = "us-east-2"
-  profile = "eks-dev"
+  profile = "AdminBootstrap-277089531535"
 }
 
 module "vpc" {
