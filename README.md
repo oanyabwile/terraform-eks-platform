@@ -1,43 +1,113 @@
 # EKS Platform Demo (Terraform + ALB Ingress)
 
-This project demonstrates deploying a containerized Python application to AWS EKS using Terraform and exposing it publicly via AWS Application Load Balancer (ALB) Ingress.
+This project demonstrates deploying and operating a production-style containerized application on AWS EKS, exposed publicly using an AWS Application Load Balancer (ALB) via Kubernetes Ingress.
+
+The focus is on **real-world EKS architecture**, **secure AWS IAM integration**, and **end-to-end traffic flow ownership**, not simplified demo patterns.
+
+---
+
+## Project Goal
+
+The goal of this project was to design and operate an EKS workload using production-grade AWS primitives:
+
+- No NodePort shortcuts
+- No manual load balancer creation
+- Secure, least-privilege IAM via IRSA
+- Controller-driven AWS resource provisioning
+
+This mirrors how EKS is typically used in real environments.
+
+---
 
 ## Architecture
+
 Traffic flow:
-Client → AWS ALB → Kubernetes Ingress → Service → Pods (Flask app)
+
+```text 
+Client
+↓
+AWS Application Load Balancer (ALB)
+↓
+Kubernetes Ingress (ALB Ingress Controller)
+↓
+ClusterIP Service
+↓
+Pods (Flask application)
+```
+
+The ALB is **created dynamically** by the AWS Load Balancer Controller in response to Kubernetes Ingress resources.
+
+---
 
 ## Tech Stack
+
 - AWS EKS
 - Terraform (modular infrastructure)
-- AWS Load Balancer Controller (IRSA)
+- AWS Load Balancer Controller
+- IAM Roles for Service Accounts (IRSA)
 - Amazon ECR
 - Kubernetes (Deployment, Service, Ingress)
 - Python (Flask)
 
-## Key Features
-- Infrastructure provisioned entirely with Terraform
-- IAM Roles for Service Accounts (IRSA) for ALB controller
-- Public ALB created dynamically via Kubernetes Ingress
-- Health checks integrated with ALB
-- Stateless containerized application
+---
 
 ## Application Endpoints
-- `/health` – health check endpoint
-- `/` – public application endpoint
+
+- `/` – Public application endpoint
+- `/health` – Health check endpoint (used by Kubernetes and ALB)
+
+---
 
 ## Deployment Flow
-1. Build Docker image
+
+1. Build Docker image locally
 2. Push image to Amazon ECR
-3. Deploy Kubernetes manifests
-4. ALB Ingress exposes service publicly
+3. Deploy Kubernetes manifests (Deployment, Service)
+4. AWS Load Balancer Controller detects Ingress
+5. ALB is provisioned dynamically via AWS APIs
+6. Traffic is routed to healthy pods based on `/health` checks
+
+---
+
+## Key Features
+
+- Infrastructure provisioned entirely with Terraform
+- Secure AWS IAM integration using IRSA (no node role over-permissioning)
+- Public ALB created automatically from Kubernetes Ingress
+- Health checks integrated end-to-end (ALB → Service → Pod)
+- Stateless containerized application
+
+---
+
+## Operational Considerations
+
+- Kubernetes Ingress resources are declarative and require a running controller to provision AWS resources
+- ALB provisioning is asynchronous and dependent on correct IAM permissions
+- IRSA is required to prevent AWS controllers from inheriting node IAM roles
+- Health checks must align across ALB, Service, and Pod layers
+- DNS propagation may lag after successful ALB creation
+- Primary debugging signals come from `kubectl describe`, controller logs, and AWS IAM errors
+
+
+---
 
 ## What This Project Demonstrates
-- Real-world EKS traffic routing
-- Production-style AWS IAM integration
-- Debugging ALB + Kubernetes networking issues
-- End-to-end cloud infrastructure ownership
+
+- Production-grade EKS traffic routing
+- Secure AWS IAM integration patterns
+- Real-world Kubernetes + AWS debugging
+- Full ownership from infrastructure to application
+- Understanding of Kubernetes control plane vs controllers vs AWS APIs
+
+---
 
 ## Future Improvements
-- HTTPS with ACM
-- HPA with metrics-server
-- CI/CD pipeline for automated deploys
+
+- HTTPS with ACM and TLS termination
+- Horizontal Pod Autoscaler (HPA) with metrics-server
+- CI/CD pipeline for automated builds and deploys
+- Centralized logging and metrics (CloudWatch / Prometheus)
+
+---
+
+
